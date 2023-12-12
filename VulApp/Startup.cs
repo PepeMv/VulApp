@@ -21,12 +21,12 @@ namespace VulApp
             services.AddScoped<DapperContext>();
             services.AddScoped<IUsuarioRepo, UsuarioRepo>();
 
-            services.AddControllers();
+            services.AddControllersWithViews();
             services.AddSwaggerGen();
 
             CargaEnsambladosPraMediatR(services);
 
-
+            services.AddMvc(x => x.EnableEndpointRouting = false);
 
 
         }
@@ -44,10 +44,14 @@ namespace VulApp
             //app.UseMiddleware<HandlerExceptionMiddleware>();
             app.UseRouting();
             app.UseAuthorization();
+
             app
                 .UseEndpoints(endpoints =>
                 {
-                    endpoints.MapControllers();
+                    //endpoints.MapControllers();
+                    endpoints.MapControllerRoute(
+                    name: "default",
+                    pattern: "{controller=Home}/{action=Index}/{id?}");
                 });
 
         }
