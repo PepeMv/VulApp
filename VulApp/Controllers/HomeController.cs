@@ -18,7 +18,6 @@ namespace SecureApp.Controllers
 
         public IActionResult Index()
         {
-//            int id = int.Parse((string)ViewData["id"]);
             var usuario = _usuarioRepo.DameUsuarioPorId(1).GetAwaiter().GetResult();
 
             return View(usuario);

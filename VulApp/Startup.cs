@@ -1,7 +1,9 @@
-﻿
-using Conexion;
+﻿using Conexion;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 using Negocio.Implementacion;
 using Negocio.Interfaces;
+using System.Text;
 
 namespace VulApp
 {
@@ -17,6 +19,24 @@ namespace VulApp
         public void ConfigureServices(IServiceCollection services)
         {
             var connectionString = _configuration.GetConnectionString("DefaultConnection");
+
+            var jwtIssuer = _configuration.GetSection("Jwt:Issuer").Get<string>();
+            var jwtKey = _configuration.GetSection("Jwt:Key").Get<string>();
+
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+             .AddJwtBearer(options =>
+             {
+                 options.TokenValidationParameters = new TokenValidationParameters
+                 {
+                     ValidateIssuer = true,
+                     ValidateAudience = true,
+                     ValidateLifetime = true,
+                     ValidateIssuerSigningKey = true,
+                     ValidIssuer = jwtIssuer,
+                     ValidAudience = jwtIssuer,
+                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+                 };
+             });
 
             services.AddScoped<DapperContext>();
             services.AddScoped<IUsuarioRepo, UsuarioRepo>();

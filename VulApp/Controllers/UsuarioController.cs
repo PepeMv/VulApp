@@ -1,4 +1,7 @@
 ﻿using MediatR;
+using MensajesExternos;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Negocio.Interfaces;
 
@@ -16,7 +19,7 @@ namespace VulApp.Controllers
             _usuarioRepo = usuarioRepo;
         }
 
-
+        [Authorize]
         [HttpGet(Name = "DameTodosUsuarios")]
         [ProducesResponseType(typeof(Unit), StatusCodes.Status200OK)]
         public async Task<IActionResult> DameTodosUsuarios()
@@ -25,6 +28,7 @@ namespace VulApp.Controllers
             return Ok(result);
         }
 
+        [Authorize]
         [HttpGet("{id}",Name = "DameUsuarioPorId")]
         [ProducesResponseType(typeof(Unit), StatusCodes.Status200OK)]
         public async Task<IActionResult> DameUsuarioPorId(int id)
@@ -33,11 +37,22 @@ namespace VulApp.Controllers
             return Ok(result);
         }
 
-        [HttpGet("{codigo}/{contrasenia}", Name = "Logea")]
+        [Authorize]
+        [HttpPut(Name = "ActualizaUsuario")]
         [ProducesResponseType(typeof(Unit), StatusCodes.Status200OK)]
-        public async Task<IActionResult> Logea(string codigo, string contrasenia)
+        public async Task<IActionResult> ActualizaUsuario(ActualizaUsuarioEntrada entrada)
         {
-            var result = await _usuarioRepo.Logea(codigo,contrasenia);
+            var result = await _usuarioRepo.Actualizausuario(entrada);
+            return Ok(result);
+        }
+
+
+
+        [HttpPost(Name = "Login")]
+        [ProducesResponseType(typeof(Unit), StatusCodes.Status200OK)]
+        public async Task<IActionResult> Login(LoginRequest loginrequest)
+        {
+            var result = await _usuarioRepo.Login(loginrequest.Email, loginrequest.Password);
             return Ok(result);
         }
 

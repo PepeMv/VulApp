@@ -1,4 +1,7 @@
 ﻿using Entidades;
+using MensajesExternos;
+using Microsoft.AspNetCore.Mvc;
+using Negocio.Clases;
 
 namespace Negocio.Interfaces
 {
@@ -6,7 +9,7 @@ namespace Negocio.Interfaces
     {
         public Task<IEnumerable<Usuario>> DameTodosUsuarios();
         public Task<Usuario> DameUsuarioPorId(int id);
-
-        public Task<Usuario> Logea(string usuario, string contrasenia);
+        Task<IActionResult> Actualizausuario(ActualizaUsuarioEntrada entrada);
+        public Task<LoginResponse> Login(string usuario, string contrasenia);
     }
 }
