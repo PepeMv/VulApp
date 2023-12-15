@@ -20,24 +20,27 @@ namespace VulApp
         {
             var connectionString = _configuration.GetConnectionString("DefaultConnection");
 
-            var jwtIssuer = _configuration.GetSection("Jwt:Issuer").Get<string>();
-            var jwtKey = _configuration.GetSection("Jwt:Key").Get<string>();
+            services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+            }).AddJwtBearer(o =>
+            {
+                o.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidIssuer = _configuration["Jwt:Issuer"],
+                    ValidAudience = _configuration["Jwt:Audience"],
+                    IssuerSigningKey = new SymmetricSecurityKey
+                    (Encoding.UTF8.GetBytes(_configuration["Jwt:Key"])),
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = false,
+                    ValidateIssuerSigningKey = true
+                };
+            });
 
-            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-             .AddJwtBearer(options =>
-             {
-                 options.TokenValidationParameters = new TokenValidationParameters
-                 {
-                     ValidateIssuer = true,
-                     ValidateAudience = true,
-                     ValidateLifetime = true,
-                     ValidateIssuerSigningKey = true,
-                     ValidIssuer = jwtIssuer,
-                     ValidAudience = jwtIssuer,
-                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
-                 };
-             });
-
+            services.AddAuthorization();
             services.AddScoped<DapperContext>();
             services.AddScoped<IUsuarioRepo, UsuarioRepo>();
 
@@ -63,8 +66,8 @@ namespace VulApp
 
             //app.UseMiddleware<HandlerExceptionMiddleware>();
             app.UseRouting();
+            app.UseAuthentication();
             app.UseAuthorization();
-
             app
                 .UseEndpoints(endpoints =>
                 {

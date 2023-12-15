@@ -9,7 +9,7 @@ namespace Negocio.Interfaces
     {
         public Task<IEnumerable<Usuario>> DameTodosUsuarios();
         public Task<Usuario> DameUsuarioPorId(int id);
-        Task<IActionResult> Actualizausuario(ActualizaUsuarioEntrada entrada);
+        Task<int> Actualizausuario(ActualizaUsuarioEntrada entrada);
         public Task<LoginResponse> Login(string usuario, string contrasenia);
     }
 }

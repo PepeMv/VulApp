@@ -2,6 +2,7 @@
 using Dapper;
 using Entidades;
 using MensajesExternos;
+using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
@@ -16,11 +17,11 @@ namespace Negocio.Implementacion
     public class UsuarioRepo : IUsuarioRepo
     {
         private readonly DapperContext _dapperContext;
-        private readonly IConfiguration _config;
+        private readonly IConfiguration _configuration;
         public UsuarioRepo(DapperContext context, IConfiguration config)
         {
             _dapperContext = context;
-            _config = config;
+            _configuration = config;
         }
 
         public async Task<IEnumerable<Usuario>> DameTodosUsuarios()
@@ -40,15 +41,15 @@ namespace Negocio.Implementacion
             return await conexion.QuerySingleOrDefaultAsync<Usuario>(query) ?? null;
         }
 
-        public async Task<IActionResult> Actualizausuario(ActualizaUsuarioEntrada entrada)
+        public async Task<int> Actualizausuario(ActualizaUsuarioEntrada entrada)
         {
-            var query = $"UPDATE `itp_accesos.usuario` SET Codigo={entrada.Codigo}, Nombre={entrada.Nombre}, Celular={entrada.Celular}, EstaActivo={entrada.EstaActivo} WHERE Id={entrada.Id};";
+            var query = $"UPDATE `itp_accesos.usuario` SET Codigo='{entrada.Codigo}', Nombre='{entrada.Nombre}', Celular='{entrada.Celular}', EstaActivo='{entrada.EstaActivo}' WHERE Id='{entrada.Id}';";
             
             using var conexion = _dapperContext.CreateConnection();
 
             var xx = await conexion.ExecuteAsync(query);
 
-            return (IActionResult)Task.FromResult(0);
+            return 0;
         }
         public async Task<LoginResponse> Login(string codigo, string contrasenia)
         {
@@ -68,29 +69,36 @@ namespace Negocio.Implementacion
             if (usuarioInformacion == null)
                 throw new Exception("Usuario o contrasenia incorrecto.");
 
-            //var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
-            //var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+            var issuer = _configuration["Jwt:Issuer"];
+            var audience = _configuration["Jwt:Audience"];
+            var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"]);
 
-            //var claims = new List<Claim>
-            //{
-            //    new Claim(ClaimTypes.Name, usuario.Nombre),
-            //    new Claim(ClaimTypes.Role, usuario.Codigo),
-            
-            //};
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = 
+                    new ClaimsIdentity(new[]
+                    {
+                        new Claim("Id", Guid.NewGuid().ToString()),
+                        new Claim(JwtRegisteredClaimNames.Email, usuario.Codigo),
+                        new Claim(JwtRegisteredClaimNames.Jti, 
+                        Guid.NewGuid().ToString())
+                    }),
 
-            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
-            var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+                Expires = DateTime.UtcNow.AddMinutes(120),
+                Issuer = issuer,
+                Audience = audience,
+                SigningCredentials = new SigningCredentials
+                (new SymmetricSecurityKey(key),
+                SecurityAlgorithms.HmacSha512Signature)
+            };
 
-            var Sectoken = new JwtSecurityToken(_config["Jwt:Issuer"],
-              _config["Jwt:Issuer"],
-              null,
-              expires: DateTime.Now.AddMinutes(120),
-              signingCredentials: credentials);
-
-            var token = new JwtSecurityTokenHandler().WriteToken(Sectoken);
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            var jwtToken = tokenHandler.WriteToken(token);
+            var stringToken = tokenHandler.WriteToken(token);
 
 
-            return new LoginResponse(token,null);
+            return new LoginResponse(stringToken, null);
 
             
         }
